@@ -1,16 +1,21 @@
+// populate scrapes reads command line arguments and searches rosettacode.org
+// for blocks of code listed under headings (programming language names) that
+// match those strings. The code blocks are saved under individual files with
+// extensions matched to the language or ".txt" as a default if the extension
+// is unknown.
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"bytes"
 
-	"golang.org/x/net/html"
-	"github.com/gocolly/colly"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/gocolly/colly"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/net/html"
 )
 
 func main() {
@@ -35,6 +40,7 @@ func main() {
 	// scrapes code blocks from a specific challenge
 	codeCollector := colly.NewCollector(
 		colly.AllowedDomains("rosettacode.org"),
+		colly.Async(true),
 		colly.MaxDepth(0),
 	)
 	// get tasks
@@ -54,7 +60,7 @@ func main() {
 	})
 
 	codeCollector.OnResponse(func(r *colly.Response) {
-		log.Info("Received response:\t",r.StatusCode)
+		log.Info("Received response:\t", r.StatusCode)
 	})
 
 	codeCollector.OnHTML("h2", func(e *colly.HTMLElement) {
@@ -142,8 +148,8 @@ func customText(s *goquery.Selection) string {
 		if n.Type == html.TextNode {
 			// We will get weird characters from the nbsp that we need to get rid
 			// of. We may get additional white space, but that's not such a problem.
-			d := strings.ReplaceAll(n.Data,"\xa0","\x20")
-			d = strings.ReplaceAll(d,"\xc2","\x20")
+			d := strings.ReplaceAll(n.Data, "\xa0", "\x20")
+			d = strings.ReplaceAll(d, "\xc2", "\x20")
 			buf.WriteString(d)
 		}
 		// insert a newline where there is a <br> tag
